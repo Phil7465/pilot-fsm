@@ -7,9 +7,11 @@ async function main() {
   const password = await bcrypt.hash("ChangeMe123!", 10);
   const admin = await prisma.user.upsert({
     where: { email: "admin@pilotfsm.test" },
-    update: {},
+    update: {
+      passwordHash: password,
+    },
     create: {
-      name: "Office Admin",
+      name: "Admin User",
       email: "admin@pilotfsm.test",
       passwordHash: password,
       role: "ADMIN",
@@ -18,7 +20,9 @@ async function main() {
 
   const driver = await prisma.user.upsert({
     where: { email: "driver@pilotfsm.test" },
-    update: {},
+    update: {
+      passwordHash: password,
+    },
     create: {
       name: "Field Driver",
       email: "driver@pilotfsm.test",
@@ -26,6 +30,17 @@ async function main() {
       role: "DRIVER",
     },
   });
+
+  // Ensure global settings exist
+  const settings = await prisma.globalSetting.findFirst();
+  if (!settings) {
+    await prisma.globalSetting.create({
+      data: {
+        companyName: "Pilot Field Service Pro",
+        defaultCurrency: "GBP",
+      },
+    });
+  }
 
   const customer =
     (await prisma.customer.findFirst({ where: { email: "client@acme.test" } })) ??
